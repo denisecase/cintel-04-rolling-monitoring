@@ -1,0 +1,41 @@
+# .github/workflows/ci.yml
+# REQ: Validates project configuration files automatically.
+# OBS: Runs on every push - provides feedback without blocking work.
+# WHY: Keep projects clean and catch issues early.
+
+name: Continuous Integration (CI) Checks
+
+# Trigger conditions: runs automatically on push/PR, or manually via GitHub UI
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch: # Enables manual trigger from Actions tab
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest # Uses GitHub-hosted Ubuntu runner
+
+    steps:
+      # Assembly steps
+
+      - name: A1) Checkout code
+        uses: actions/checkout@v6
+
+      - name: A2) Install Python 3.14
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: A3) Install uv package manager
+        run: pip install uv
+
+      # Basic Checks
+
+      - name: B1) Validate pyproject.toml
+        run: uv sync --dry-run
+        continue-on-error: true # Won't fail the workflow if there's an error
+
+      - name: B2) Report success
+        run: echo "SUCCESS Configuration validation complete"

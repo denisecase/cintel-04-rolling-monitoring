@@ -1,0 +1,132 @@
+# ============================================================
+# .github/workflows/links.yml (Lychee Link Checker)
+# ============================================================
+# SOURCE: https://github.com/denisecase/templates
+#
+# WHY-FILE: Automated link checking.
+# OBS: Behavior is configured in lychee.toml in this repository.
+# OBS: Runs on pull requests and monthly on schedule; manual trigger always available.
+# OBS: This workflow always publishes a report table to the job summary.
+# OBS: This workflow marks the run as failed (not green) when broken links are found.
+
+name: Check Links
+
+on:
+  workflow_dispatch: # WHY: Manual trigger - always available
+  pull_request: # WHY: Validates PR links before merge
+  schedule:
+    - cron: "0 6 1 * *" # WHY: Runs monthly (1st of month)
+
+concurrency:
+  # WHY: Prevent multiple simultaneous link checks on same ref
+  group: link-check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lychee:
+    name: Link checks
+    runs-on: ubuntu-latest # WHY: Stable runner for lychee-action + bash steps.
+    timeout-minutes: 20 # WHY: Prevent hanging jobs.
+
+    permissions:
+      contents: read # WHY: Needed to checkout code.
+
+    steps:
+      - name: 1) Checkout repository code
+        uses: actions/checkout@v6 # OBS: Keep current major.
+
+      - name: 2) Initialize report file (placeholder)
+        # WHY: Ensure the job summary always has a report, even if Lychee crashes early.
+        run: |
+          cat > ./lychee-report.md << 'EOF'
+          # Summary
+
+          | Status        | Count |
+          |---------------|-------|
+          | 🔍 Total      | 0     |
+          | ✅ Successful | 0     |
+          | ⏳ Timeouts   | 0     |
+          | 🔀 Redirected | 0     |
+          | 👻 Excluded   | 0     |
+          | ❓ Unknown    | 0     |
+          | 🚫 Errors     | 0     |
+          | ⛔ Unsupported| 0     |
+
+          Report not generated yet (workflow still running).
+          EOF
+
+      - name: 3) Check links with Lychee
+        id: lychee
+        # WHY: Keep running summary/gate steps even if Lychee finds failures.
+        continue-on-error: true
+        uses: lycheeverse/lychee-action@v2.7.0
+        with:
+          # WHY: Do not hard-fail inside the action; decide final status in the gate step.
+          fail: false
+          # WHY: Capture output for later use in job summary.
+          output: ./lychee-report.md
+          # OBS: Force markdown so the report is readable in summaries/comments.
+          format: markdown
+          args: >
+            --config lychee.toml
+            --user-agent "${{ github.repository }}/lychee"
+            './**/*.bib'
+            './**/*.md'
+            './**/*.html'
+            './**/*.tex'
+            './**/*.yml'
+            './**/*.yaml'
+          # OBS: Always use latest Lychee release.
+          lycheeVersion: latest
+        env:
+          # WHY: Allows Lychee to authenticate to GitHub when checking links.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 4) Add results to job summary
+        # WHY: Always show report, even on success or failure.
+        if: always()
+        run: |
+          echo "## Link Check Report" >> "$GITHUB_STEP_SUMMARY"
+          if [ -f ./lychee-report.md ]; then
+            cat ./lychee-report.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No report generated (lychee-report.md missing)." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          # WHY: Provide a fix-it hint when the Dependabot security page is flagged.
+          if [ -f ./lychee-report.md ] && grep -q "/security/dependabot" ./lychee-report.md; then
+            cat >> "$GITHUB_STEP_SUMMARY" << 'EOF'
+
+          ## Fix for Dependabot security link (GitHub settings)
+          If the link checker reports a 404 for the Dependabot security page, it is often because Advanced Security options are not enabled.
+
+          Please go to:
+          Repository Settings -> Advanced Security
+
+          Enable at least:
+          - Dependabot security updates
+          - Grouped security updates (recommended)
+
+          After enabling, the Dependabot security page link should resolve.
+          EOF
+          fi
+
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Lychee exit code: ${{ steps.lychee.outputs.exit_code }}" >> "$GITHUB_STEP_SUMMARY"
+
+
+      - name: 7) Gate fail job if broken links found
+        # WHY: Ensure the overall status is not green when broken links are detected.
+        if: always()
+        run: |
+          code="${{ steps.lychee.outputs.exit_code }}"
+
+          if [ -z "$code" ]; then
+            echo "::error::Lychee exit code missing (treating as failure so status is not green)."
+            exit 1
+          fi
+
+          if [ "$code" != "0" ]; then
+            echo "::error::Broken links detected (lychee exit code $code). See the job summary report."
+            exit 1
+          fi
