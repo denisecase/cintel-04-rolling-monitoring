@@ -1,40 +1,44 @@
 # Glossary
 
-In this first module, we focus only on:
+## Quick Lookup
 
-- **Detect deviations in a static dataset using clearly defined domain rules.**
+Common terms used in this module:
 
-## Anomaly
+- **Rolling Window** - a moving subset of the most recent observations used to compute statistics
+- **Rolling Mean** - the average of values within a rolling window
+- **Window Size** - the number of observations included in the rolling calculation
+- **Signal** - a derived metric created to better understand system behavior
+- **Rolling Signal** - a signal computed across recent observations to smooth noise
+- **Monitoring** - observing system behavior over time using metrics and signals
 
-An **anomaly** is a value that:
+## Rolling Window
 
-- Falls outside the expected or reasonable range for a given context, and/or
-- Violates the domain rules defined.
+A rolling window calculates statistics using the most recent **N observations**.
+The window "moves" forward one row at a time.
+Example (window size = 3):
 
-Important:
+```
+row 1 → mean of [1]
+row 2 → mean of [1,2]
+row 3 → mean of [1,2,3]
+row 4 → mean of [2,3,4]
+```
 
-An anomaly is not universal.
-It depends on **assumptions, context, and domain knowledge**.
+## Window Size
 
-Sometimes we have real-world information about reasonable thresholds for:
+The number of observations used in the rolling calculation.
+Small windows respond quickly to changes.
+Large windows smooth the signal but respond more slowly.
 
-- Age in years for humans
-- Age in years for human children
-- Age in years for dogs
-- Age in years for cats
-- Age in years for tortoises
-- Height in inches for humans
-- Height in inches for human children
-- Height in inches for dogs
-- Height in inches for cats
-- Height in inches for tortoises
+## Monitoring Signal
 
-## Understanding Comes First
+A metric used to observe system behavior. Examples:
 
-Continuous Intelligence does not begin with complex models.
+- requests per minute
+- error rate
+- average latency
 
-It begins with clarity and experience:
+## Rolling Monitoring
 
-- What do we expect?
-- What violates that expectation?
-- How do we detect and document it?
+The process of **computing rolling statistics** to track how system behavior evolves across observations.
+Rolling monitoring is a core technique in **continuous intelligence systems**.
