@@ -59,7 +59,7 @@ jobs:
         id: lychee
         # WHY: Keep running summary/gate steps even if Lychee finds failures.
         continue-on-error: true
-        uses: lycheeverse/lychee-action@v2.7.0
+        uses: lycheeverse/lychee-action@v2.8.0
         with:
           # WHY: Do not hard-fail inside the action; decide final status in the gate step.
           fail: false
