@@ -122,9 +122,7 @@ def main() -> None:
     # ----------------------------------------------------
     # The `requests` column holds the count of requests handled at each timestamp.
     requests_rolling_mean_recipe: pl.Expr = (
-        pl.col("requests")
-        .rolling_mean(WINDOW_SIZE)
-        .alias("requests_rolling_mean")
+        pl.col("requests").rolling_mean(WINDOW_SIZE).alias("requests_rolling_mean")
     )
 
     # ----------------------------------------------------
@@ -132,9 +130,7 @@ def main() -> None:
     # ----------------------------------------------------
     # The `errors` column holds the count of errors encountered at each timestamp.
     errors_rolling_mean_recipe: pl.Expr = (
-        pl.col("errors")
-        .rolling_mean(WINDOW_SIZE)
-        .alias("errors_rolling_mean")
+        pl.col("errors").rolling_mean(WINDOW_SIZE).alias("errors_rolling_mean")
     )
 
     # ----------------------------------------------------

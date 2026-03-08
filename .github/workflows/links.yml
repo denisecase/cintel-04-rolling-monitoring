@@ -6,8 +6,6 @@
 # WHY-FILE: Automated link checking.
 # OBS: Behavior is configured in lychee.toml in this repository.
 # OBS: Runs on pull requests and monthly on schedule; manual trigger always available.
-# OBS: This workflow always publishes a report table to the job summary.
-# OBS: This workflow marks the run as failed (not green) when broken links are found.
 
 name: Check Links
 
@@ -22,51 +20,33 @@ concurrency:
   group: link-check-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read # WHY: Needed to checkout code.
+  issues: write # WHY: Needed to create issue on scheduled failures.
+  pull-requests: write # WHY: Needed to comment on PR if links broken.
+
+env:
+  PYTHONUNBUFFERED: "1" # WHY: Real-time logging.
+  PYTHONIOENCODING: "utf-8" # WHY: Ensure UTF-8 encoding for international characters.
+  REPORT_FAILURES: "true" # WHY: Enable PR comments and scheduled issues for link failures.
+
 jobs:
   lychee:
     name: Link checks
-    runs-on: ubuntu-latest # WHY: Stable runner for lychee-action + bash steps.
-    timeout-minutes: 20 # WHY: Prevent hanging jobs.
-
-    permissions:
-      contents: read # WHY: Needed to checkout code.
+    runs-on: ubuntu-latest # WHY: Linux environment matches most production deployments
+    timeout-minutes: 20 # WHY: Prevent hanging jobs. If over time, likely stuck.
 
     steps:
       - name: 1) Checkout repository code
-        uses: actions/checkout@v6 # OBS: Keep current major.
+        uses: actions/checkout@v6
 
-      - name: 2) Initialize report file (placeholder)
-        # WHY: Ensure the job summary always has a report, even if Lychee crashes early.
-        run: |
-          cat > ./lychee-report.md << 'EOF'
-          # Summary
-
-          | Status        | Count |
-          |---------------|-------|
-          | 🔍 Total      | 0     |
-          | ✅ Successful | 0     |
-          | ⏳ Timeouts   | 0     |
-          | 🔀 Redirected | 0     |
-          | 👻 Excluded   | 0     |
-          | ❓ Unknown    | 0     |
-          | 🚫 Errors     | 0     |
-          | ⛔ Unsupported| 0     |
-
-          Report not generated yet (workflow still running).
-          EOF
-
-      - name: 3) Check links with Lychee
+      - name: 2) Check links with Lychee
         id: lychee
-        # WHY: Keep running summary/gate steps even if Lychee finds failures.
-        continue-on-error: true
-        uses: lycheeverse/lychee-action@v2.7.0
+        uses: lycheeverse/lychee-action@v2.8.0
         with:
-          # WHY: Do not hard-fail inside the action; decide final status in the gate step.
+          # WHY: Do not hard-fail this step; always run reporting steps.
+          # Instead, fail the job explicitly at the end if exit_code != 0.
           fail: false
-          # WHY: Capture output for later use in job summary.
-          output: ./lychee-report.md
-          # OBS: Force markdown so the report is readable in summaries/comments.
-          format: markdown
           args: >
             --config lychee.toml
             --user-agent "${{ github.repository }}/lychee"
@@ -76,57 +56,62 @@ jobs:
             './**/*.tex'
             './**/*.yml'
             './**/*.yaml'
-          # OBS: Always use latest Lychee release.
-          lycheeVersion: latest
         env:
-          # WHY: Allows Lychee to authenticate to GitHub when checking links.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 4) Add results to job summary
-        # WHY: Always show report, even on success or failure.
-        if: always()
+      - name: 3) Comment on PR if links broken
+        if: steps.lychee.outputs.exit_code != 0 && github.event_name == 'pull_request' && env.REPORT_FAILURES == 'true'
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const runUrl = `${context.payload.repository.html_url}/actions/runs/${context.runId}`;
+            const comment = [
+              "## Link Check Results",
+              "",
+              `Some links appear broken. Check the workflow logs: ${runUrl}`,
+            ].join("\n");
+
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment,
+            });
+
+      - name: 4) Create issue for scheduled failures
+        # WHY: Track broken links found during scheduled checks
+        # OBS: Only creates issue if none already open with 'broken-links' label
+        if: steps.lychee.outputs.exit_code != 0 && github.event_name == 'schedule' && env.REPORT_FAILURES == 'true'
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const date = new Date().toISOString().split("T")[0];
+            const title = `Link Check Failed - ${date}`;
+            const runUrl = `${context.payload.repository.html_url}/actions/runs/${context.runId}`;
+            const body = `Monthly link check found broken links.\n\nWorkflow logs: ${runUrl}`;
+
+            const existing = await github.rest.issues.listForRepo({
+              owner,
+              repo,
+              labels: "broken-links",
+              state: "open",
+              per_page: 1,
+            });
+
+            if (existing.data.length === 0) {
+              await github.rest.issues.create({
+                owner,
+                repo,
+                title,
+                body,
+                labels: ["maintenance", "broken-links"],
+              });
+            }
+
+      - name: 5) Fail job if broken links were found
+        if: steps.lychee.outputs.exit_code != 0
         run: |
-          echo "## Link Check Report" >> "$GITHUB_STEP_SUMMARY"
-          if [ -f ./lychee-report.md ]; then
-            cat ./lychee-report.md >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "No report generated (lychee-report.md missing)." >> "$GITHUB_STEP_SUMMARY"
-          fi
-
-          # WHY: Provide a fix-it hint when the Dependabot security page is flagged.
-          if [ -f ./lychee-report.md ] && grep -q "/security/dependabot" ./lychee-report.md; then
-            cat >> "$GITHUB_STEP_SUMMARY" << 'EOF'
-
-          ## Fix for Dependabot security link (GitHub settings)
-          If the link checker reports a 404 for the Dependabot security page, it is often because Advanced Security options are not enabled.
-
-          Please go to:
-          Repository Settings -> Advanced Security
-
-          Enable at least:
-          - Dependabot security updates
-          - Grouped security updates (recommended)
-
-          After enabling, the Dependabot security page link should resolve.
-          EOF
-          fi
-
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "Lychee exit code: ${{ steps.lychee.outputs.exit_code }}" >> "$GITHUB_STEP_SUMMARY"
-
-
-      - name: 7) Gate fail job if broken links found
-        # WHY: Ensure the overall status is not green when broken links are detected.
-        if: always()
-        run: |
-          code="${{ steps.lychee.outputs.exit_code }}"
-
-          if [ -z "$code" ]; then
-            echo "::error::Lychee exit code missing (treating as failure so status is not green)."
-            exit 1
-          fi
-
-          if [ "$code" != "0" ]; then
-            echo "::error::Broken links detected (lychee exit code $code). See the job summary report."
-            exit 1
-          fi
+          echo "Lychee found broken links (exit_code != 0). Failing workflow."
+          exit 1

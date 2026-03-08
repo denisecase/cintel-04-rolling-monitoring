@@ -32,7 +32,6 @@ uv sync --extra dev --extra docs --upgrade
 
 Run all commands via **uv**.
 
-
 Lint / format:
 
 ```shell
@@ -43,11 +42,10 @@ uv run ruff check .
 Build documentation:
 
 ```shell
-uv run mkdocs build
+uv run zensical build
 ```
 
-## pre-commit (Optional)
+## pre-commit
 
-- pre-commit is optional locally; CI is authoritative.
 - pre-commit runs only on tracked / staged files.
-- Developers should `git add` relevant files before expecting hooks to run.
+- Developers should `git add -A` files before expecting hooks to run.
