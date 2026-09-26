@@ -7,19 +7,9 @@ Follow the instructions in
 
 Complete:
 
-1. Phase 1. **Start & Run** – copy the project and confirm it runs
-2. Phase 2. **Change Authorship** – update the project to your name and GitHub account
-3. Phase 3. **Read & Understand** – review the project structure and code
-
-## FRIDAY/SUNDAY: Complete Workflow Phases 4-5
-
-Complete:
-
-1. Phase 4. **Make a Technical Modification**
-2. Phase 5. **Apply the Skills to a New Problem**
-
-3. Phase 2. **Change Authorship** – update the project to your name and GitHub account
-4. Phase 3. **Read & Understand** – review the project structure and code
+1. Phase 1. **Start & Run**
+2. Phase 2. **Read & Understand**
+3. Phase 3. **Take Ownership**
 
 ## FRIDAY/SUNDAY: Complete Workflow Phases 4-5
 
@@ -50,7 +40,7 @@ After completing this project, you should be able to:
 
 The example file is located in:
 
-```
+```text
 src/cintel/rolling_monitor_case.py
 ```
 
@@ -126,7 +116,6 @@ Rolling monitoring is a core component of **continuous intelligence systems**, w
 If you would like to apply these skills to a real dataset instead of the provided example data, see suggested datasets:
 
 https://denisecase.github.io/pro-analytics-02/reference/datasets/cintel/
-
 
 ---
 
