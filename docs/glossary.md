@@ -17,7 +17,7 @@ A rolling window calculates statistics using the most recent **N observations**.
 The window "moves" forward one row at a time.
 Example (window size = 3):
 
-```
+```text
 row 1 → mean of [1]
 row 2 → mean of [1,2]
 row 3 → mean of [1,2,3]
@@ -42,3 +42,7 @@ A metric used to observe system behavior. Examples:
 
 The process of **computing rolling statistics** to track how system behavior evolves across observations.
 Rolling monitoring is a core technique in **continuous intelligence systems**.
+
+---
+
+[◄ Back to 🏠 Home](index.md)
