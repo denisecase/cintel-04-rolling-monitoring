@@ -1,143 +1,106 @@
 # Project Instructions
 
-## WEDNESDAY: Complete Workflow Phase 1-3
+## Goal
 
-Follow the instructions in
-[⭐ **Workflow: Apply Example**](https://denisecase.github.io/pro-analytics-02/workflow-b-apply-example-project/).
+Apply **rolling monitoring** to examine how system behavior
+changes across successive observations.
 
-Complete:
+## A. Set Up Machine
 
-1. Phase 1. **Start & Run**
-2. Phase 2. **Read & Understand**
-3. Phase 3. **Take Ownership**
+Complete [Workflow A: Set Up Machine](https://denisecase.github.io/pro-analytics-02/workflow-a-set-up-machine/)
+if your machine is not ready.
 
-## FRIDAY/SUNDAY: Complete Workflow Phases 4-5
+## B. Explore Example Project
 
-Complete:
+Follow [Workflow B: Explore Example Project](https://denisecase.github.io/pro-analytics-02/workflow-b-explore-example-project/).
 
-1. Phase 4. **Make a Technical Modification**
-2. Phase 5. **Apply the Skills to a New Problem**
+Explore how the example:
 
-## Topic
+- Reads time-series system metrics.
+- Sorts observations by timestamp.
+- Defines a rolling window size.
+- Calculates rolling averages using Polars.
+- Saves rolling monitoring results as an artifact.
 
-Rolling monitoring using moving window statistics.
+Notice how changing the window size affects
+the calculated results.
 
-In this project, you will monitor how system behavior changes over time by computing **rolling averages** of key metrics.
+## C. Start New Project
 
-Rolling statistics help analysts smooth short-term noise and detect patterns that develop across time.
+Follow [Workflow C: Start New Project](https://denisecase.github.io/pro-analytics-02/workflow-c-start-new-project/).
 
-## Learning Objectives
+IMPORTANT: New repository name:
+**cintel-04-rolling-monitoring**.
 
-After completing this project, you should be able to:
+VERIFY: You have completed git add-commit-push to GitHub at least twice.
 
-- Explain why analysts use rolling statistics for monitoring
-- Compute rolling averages for system metrics
-- Add rolling signals to a DataFrame
-- Run and validate a professional Python project
-- Interpret how behavior evolves across observations
+## D. Apply Skills
 
-## Example Code
+Follow [Workflow D: Apply Skills](https://denisecase.github.io/pro-analytics-02/workflow-d-apply-skills/).
 
-The example file is located in:
+**Your problem:** Identify periods of worsening
+system reliability using rolling error rates.
 
-```text
-src/cintel/rolling_monitor_case.py
-```
+You may use the example time-series dataset
+or choose another suitable time series.
 
-It demonstrates:
+### Progression 1. Your Project Works Like the Example
 
-- reading system metrics from a CSV file
-- defining a rolling window size
-- computing rolling averages for multiple metrics
-- adding rolling signals to a DataFrame
-- writing monitoring outputs to an artifacts file
-- logging the pipeline process
+Ensure your new custom project runs like the example.
 
-Run the example and review the code before creating your own version.
+Verify that key files have been updated to use **your GitHub account** and
+the **new custom repository name**.
 
-## Dataset
+### Progression 2. Make a Technical Modification
 
-The example dataset is located in the `data/` folder.
+Change the rolling window size.
 
-Example fields include:
+For example, compare windows of 3 and 5 observations.
 
-- `requests`
-- `errors`
-- `total_latency_ms`
+Observe how the change affects the results.
 
-Each row represents one **system observation**.
+### Progression 3. Apply to a New Problem
 
-Rolling monitoring computes statistics across the most recent observations to help reveal trends.
+Investigate whether rolling error rates reveal
+periods of worsening reliability.
 
-## Your Phase 4: Technical Modification Task
+- Calculate error rate for each observation.
+- Compute rolling averages of error rate.
+- Compare at least two window sizes.
+- Identify patterns or periods of concern.
+- Save the rolling signals as artifacts.
+- Explain which window size is more useful and why.
 
-Using the example as a guide:
+A larger window may reduce short-term variation
+but respond more slowly to changing conditions.
 
-1. Copy `src/cintel/rolling_monitor_case.py`.
-2. Rename the copy to `src/cintel/rolling_monitor_yourname.py`.
-3. Run your copied file to confirm it executes correctly.
-4. Modify the program by changing or extending the rolling monitoring logic.
+## E. Finalize Project
 
-Possible modifications include:
+Follow [Workflow E: Finalize Project](https://denisecase.github.io/pro-analytics-02/workflow-e-finalize/).
 
-- changing the rolling window size
-- adding a rolling statistic for another metric
-- computing a rolling minimum, maximum, or median
-- monitoring an additional column
+Use `docs/index.md` to report:
 
-Then:
+- Data and observation intervals.
+- Rolling signals and window sizes.
+- Technical modifications.
+- Results and a time-series visual.
+- Patterns observed and their interpretation.
+- Limitations and possible improvements.
 
-- run the project
-- confirm the new rolling signals appear in the output artifact
-- confirm the program logs useful messages
+Include a clickable link to your repository and artifacts.
 
-The goal of this phase is to practice modifying a working monitoring pipeline.
+## Success
 
-## Phase 5: Apply the Skills
-
-In Phase 5 you will apply rolling monitoring to a new situation.
-
-Possible approaches include:
-
-- applying rolling monitoring to a different dataset
-- monitoring additional system signals
-- experimenting with different window sizes
-- analyzing how rolling signals change over time
-
-Update your documentation in `docs/` to explain:
-
-- what rolling signals you created
-- what window size you used
-- what patterns you observed
-- what the signals reveal about system behavior
-
-Rolling monitoring is a core component of **continuous intelligence systems**, where analysts observe how system behavior evolves over time.
-
-If you would like to apply these skills to a real dataset instead of the provided example data, see suggested datasets:
-
-https://denisecase.github.io/pro-analytics-02/reference/datasets/cintel/
+- [ ] README.md project-specific links use **your GitHub account**
+- [ ] README.md project-specific links use **your custom repository name**.
+- [ ] docs/index.md project-specific links use **your GitHub account**
+- [ ] docs/index.md project-specific links use **your custom repository name**.
+- [ ] pyproject.toml `name` has been changed to use **your custom repository name**.
+- [ ] The `src/cintel` folder reflects your authorship and custom work.
+- [ ] All necessary commands are provided and work successfully.
+- [ ] Links to the Professional Python Guide (pro-analytics-02) remain unchanged.
+- [ ] Commit history shows **at least** the git add-commit-push history required in the instructions.
 
 ---
 
-## Note on Progress
-
-Earlier approaches to rolling monitoring often required managing the window manually.
-For example, a Python implementation might use a **deque** data structure
-to store the most recent values and update the rolling window as new observations arrive.
-
-Modern data tools make this much simpler.
-
-Libraries such as **Polars** provide the **built-in rolling window operations** used in this module.
-Instead of managing the window directly, we just **describe the calculation (the _recipe_)**, and the library efficiently performs the computation _across the entire dataset_.
-
-If this project appears a bit simple or straightforward,
-it is partly because the tools have improved considerably.
-See what you can do with these powerful tools.
-
-Continuing education and staying current with evolving data tools
-is an investment that pays off,
-often significantly enhancing the efficiency and maintainability of our projects.
-
----
-
-[◄ Back to 🏠 Home](index.md)
+[◄ Back to Home](index.md)

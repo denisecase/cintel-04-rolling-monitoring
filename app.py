@@ -11,9 +11,8 @@ RUN LOCALLY:
 WASM DEPENDENCIES:
 
 Under WebAssembly (emscripten) the browser has no project environment.
-This app uses only marimo, which is already present in the marimo WASM
-runtime. If a later version adds third-party packages, the first cell
-installs them with micropip when running under WASM.
+This app uses polars in addition to marimo, so the first cell installs
+polars with micropip when running under WASM.
 
 NO LOGGING:
 
@@ -22,43 +21,18 @@ so this notebook configures no logging.
 
 PLAN CELLS FIRST
 
-1. Imports (returns shared imports and constants)
+1. Imports (installs WASM deps, returns shared imports and constants)
 2. Opening title and introduction (Markdown)
-3. Closing (Markdown)
+3. Load and sort the time-series data (same cell handles local and WASM
+   environments, via cintel.utils_system)
+4. Window size control (slider)
+5. Compute rolling means (same logic as the CLI pipeline)
+6. Show the rolling metrics table
+7. Closing (Markdown)
 
 Note: marimo triggers @app.cell functions automatically; we never call them.
 The names starting with "_" are for our own organization; the engine ignores
 them.
-
-HOW MARIMO NOTEBOOKS WORK
-
-Each cell is a FUNCTION.
-The return value of one cell can be passed as an argument to another cell.
-We never call the functions, so they don't need names other than `_` (underscore).
-(You can give them names if you want, but the notebook engine ignores them.)
-
-The notebook is REACTIVE: when a cell's code or inputs change,
-the notebook engine reruns that cell and every cell that depends on it.
-
-The notebook is always CONSISTENT with outputs reflecting current inputs.
-
-The first cell imports all dependencies, so the notebook is SELF-CONTAINED.
-
-All later cells include their dependencies in their argument list.
-Some other cells return values that can be used in other cells.
-A cell displays the value of its last expression.
-
-A cell whose last line is an assignment or a bare return
-(like data and view cells) displays nothing;
-only markdown, control, and render cells are meant to show.
-
-RULE: Each variable must be defined in exactly one cell.
-Defining the same name in two cells is a marimo error.
-
-INPUT WIDGETS/CONTROLS: A cell that builds an input widget
-resets that widget to its default every time the cell reruns.
-marimo reruns a cell whenever any argument in its signature changes.
-So a widget-building cell must depend only on what genuinely determines its options.
 """
 
 # === ONLY THIS AT THE TOP OF THE FILE ===
@@ -66,40 +40,109 @@ So a widget-building cell must depend only on what genuinely determines its opti
 import marimo
 
 __generated_with = "0.25.0"
+
 app = marimo.App(width="medium")
 
 # === FIRST CELL IMPORTS AND RETURNS DEPENDENCIES TO MAKE IT SELF-CONTAINED ===
 
 
 @app.cell
-def _():
+async def _():
+    import sys
+
+    if sys.platform == "emscripten":
+        import micropip
+
+        await micropip.install("polars")
+
     import marimo as mo
+    import polars as pl
 
-    return (mo,)
+    from cintel.utils_system import compute_rolling_metrics, load_timeseries_metrics
+
+    return compute_rolling_metrics, load_timeseries_metrics, mo, pl, sys
 
 
-# ===  TYPICALLY START WITH A MARKDOWN TITLE AND OPENING ===
+# === TITLE AND INTRODUCTION ===
 
 
 @app.cell
 def _(mo):
     mo.md(r"""
-    # I Can Build Web Apps with Marimo!
+    # Rolling Monitoring
 
-    Add your special message here:
+    A single observation can be noisy. A rolling average smooths short-term
+    variation so longer-term trends stand out. Move the slider to see how
+    window size changes what the data reveals.
     """)
 
 
-# ===  TYPICALLY END WITH A MARKDOWN SOURCE LINK AND CLOSING ===
+# === LOAD AND SORT THE TIME-SERIES DATA ===
+
+
+@app.cell
+def _(load_timeseries_metrics, mo, sys):
+    """Load the time-series data. Two environments, one cell.
+
+    Locally, polars reads the CSV from data/.
+    Under WASM (emscripten), Pyodide's open_url() fetches the CSV from
+    public/ and load_timeseries_metrics() reads and sorts it from there
+    instead.
+    """
+    notebook_location = mo.notebook_location()
+
+    if notebook_location is None:
+        raise RuntimeError("Unable to determine notebook location.")
+
+    filename = "system_metrics_timeseries.csv"
+
+    if sys.platform == "emscripten":
+        from pyodide.http import open_url  # ty: ignore[unresolved-import]
+
+        data_url = notebook_location / "public" / filename
+        df = load_timeseries_metrics(open_url(str(data_url)))
+    else:
+        data_path = notebook_location.parents[1] / "data" / filename
+        df = load_timeseries_metrics(data_path)
+
+    return (df,)
+
+
+# === WINDOW SIZE CONTROL ===
+
+
+@app.cell
+def _(mo):
+    window_size = mo.ui.slider(1, 10, value=3, label="Rolling window size (rows)")
+    window_size  # noqa: B018 (marimo often uses standalone expressions)
+    return (window_size,)
+
+
+# === COMPUTE ROLLING MEANS (SAME LOGIC AS THE CLI PIPELINE) ===
+
+
+@app.cell
+def _(compute_rolling_metrics, df, window_size):
+    df_with_rolling = compute_rolling_metrics(df, window_size.value)
+    return (df_with_rolling,)
+
+
+# === SHOW THE ROLLING METRICS TABLE ===
+
+
+@app.cell
+def _(df_with_rolling, mo):
+    mo.ui.table(df_with_rolling)
+
+
+# === TYPICALLY END WITH A MARKDOWN SOURCE LINK AND CLOSING ===
 
 
 @app.cell
 def _(mo):
     mo.md(r"""
     ---
-
     [😊 Learn more at marimo.io](https://marimo.io/)
-
     ---
 
     **Running locally?**
@@ -107,7 +150,6 @@ def _(mo):
     then press **CTRL** and **c** together (CTRL+c).
     When it asks "Are you sure you want to quit? (y/N)",
     type **y** and press **Enter**.
-
     ---
     """)
 

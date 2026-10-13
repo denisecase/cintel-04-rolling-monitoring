@@ -1,5 +1,7 @@
-"""
-rolling_monitor.py - Project script (example).
+"""rolling_monitor.py - Project script (example).
+
+Author: Your Name Here
+Date: 2026-mm-dd
 
 Time-Series System Metrics Data
 
@@ -27,17 +29,30 @@ Questions to Consider
 
 Paths (relative to repo root)
 
-    INPUT FILE: data/system_metrics_timeseries_case.csv
-    OUTPUT FILE: artifacts/rolling_metrics_case.csv
+    INPUT FILE: data/system_metrics_timeseries.csv
+    OUTPUT FILE: artifacts/rolling_metrics.csv
 
 Terminal command to run this file from the root project folder
 
     uv run python -m cintel.rolling_monitor
 
-OBS:
-  Don't edit this file - it should remain a working example.
-  Use as much of this code as you can when creating your own pipeline script,
-  and change the monitoring logic as needed for your project.
+DESIGN:
+
+Use this file to first learn and then apply your skills.
+
+Reusable functions that do the work are kept in a utils file.
+We import functions and pass in what they need through their parentheses.
+Shared utility functions can be imported into a Python
+module or a reactive marimo notebook app.
+
+Reusable visualization functions may come from sources such as eda-vizkit.
+
+SKILLS:
+
+- Reading CSV files into Polars DataFrames.
+- Defining and using constants for window sizes.
+- Logging for debugging and transparency.
+- Computing rolling averages for time-series analysis.
 """
 
 # === DECLARE IMPORTS ===
@@ -49,9 +64,11 @@ from typing import Final
 from datafun_toolkit.logger import get_logger, log_header, log_path
 import polars as pl
 
+from cintel.utils_system import compute_rolling_metrics, load_timeseries_metrics
+
 # === CONFIGURE LOGGER ===
 
-LOG: logging.Logger = get_logger("P5", level="DEBUG")
+LOG: logging.Logger = get_logger("P4", level="DEBUG")
 
 # === DEFINE GLOBAL PATHS ===
 
@@ -59,8 +76,8 @@ ROOT_DIR: Final[Path] = Path.cwd()
 DATA_DIR: Final[Path] = ROOT_DIR / "data"
 ARTIFACTS_DIR: Final[Path] = ROOT_DIR / "artifacts"
 
-DATA_FILE: Final[Path] = DATA_DIR / "system_metrics_timeseries_case.csv"
-OUTPUT_FILE: Final[Path] = ARTIFACTS_DIR / "rolling_metrics_case.csv"
+DATA_FILE: Final[Path] = DATA_DIR / "system_metrics_timeseries.csv"
+OUTPUT_FILE: Final[Path] = ARTIFACTS_DIR / "rolling_metrics.csv"
 
 # === DEFINE THE MAIN FUNCTION ===
 
@@ -86,22 +103,18 @@ def main() -> None:
     log_path(LOG, "ARTIFACTS_DIR", ARTIFACTS_DIR)
 
     # ----------------------------------------------------
-    # STEP 1: READ CSV DATA FILE INTO A POLARS DATAFRAME (TABLE)
+    # STEP 1: READ AND SORT THE TIME-SERIES DATA
     # ----------------------------------------------------
-    df = pl.read_csv(DATA_FILE)
+    # load_timeseries_metrics() wraps polars' read_csv() and sorts by
+    # timestamp — see utils_system.py. Time-series analysis requires
+    # observations to be ordered, so the sort happens right where the
+    # data is loaded.
+    df: pl.DataFrame = load_timeseries_metrics(DATA_FILE)
 
-    LOG.info(f"Loaded {df.height} time-series records")
-
-    # ----------------------------------------------------
-    # STEP 2: SORT DATA BY TIME
-    # ----------------------------------------------------
-    # Time-series analysis requires observations to be ordered.
-    df = df.sort("timestamp")
-
-    LOG.info("Sorted records by timestamp")
+    LOG.info(f"Loaded {df.height} time-series records, sorted by timestamp")
 
     # ----------------------------------------------------
-    # STEP 3: DEFINE ROLLING WINDOW RECIPES
+    # STEP 2: COMPUTE ROLLING MEANS
     # ----------------------------------------------------
     # A rolling window computes statistics over the most recent
     # N observations. The window "moves" forward one row at a time.
@@ -114,48 +127,17 @@ def main() -> None:
 
     WINDOW_SIZE: int = 3
 
-    # ----------------------------------------------------
-    # STEP 3.1: DEFINE ROLLING MEAN FOR # OF REQUESTS
-    # ----------------------------------------------------
-    # The `requests` column holds the count of requests handled at each timestamp.
-    requests_rolling_mean_recipe: pl.Expr = (
-        pl.col("requests").rolling_mean(WINDOW_SIZE).alias("requests_rolling_mean")
-    )
+    LOG.info(f"WINDOW_SIZE: {WINDOW_SIZE}")
 
-    # ----------------------------------------------------
-    # STEP 3.2: DEFINE ROLLING MEAN FOR # OF ERRORS
-    # ----------------------------------------------------
-    # The `errors` column holds the count of errors encountered at each timestamp.
-    errors_rolling_mean_recipe: pl.Expr = (
-        pl.col("errors").rolling_mean(WINDOW_SIZE).alias("errors_rolling_mean")
-    )
-
-    # ----------------------------------------------------
-    # STEP 3.3: DEFINE ROLLING MEAN FOR LATENCY
-    # ----------------------------------------------------
-    # The `total_latency_ms` column holds the total latency in milliseconds at each timestamp.
-    latency_rolling_mean_recipe: pl.Expr = (
-        pl.col("total_latency_ms")
-        .rolling_mean(WINDOW_SIZE)
-        .alias("latency_rolling_mean")
-    )
-
-    # ----------------------------------------------------
-    # STEP 3.4: APPLY THE ROLLING RECIPES IN A NEW DATAFRAME
-    # ----------------------------------------------------
-    # with_columns() evaluates the recipes and adds the new columns
-    df_with_rolling = df.with_columns(
-        [
-            requests_rolling_mean_recipe,
-            errors_rolling_mean_recipe,
-            latency_rolling_mean_recipe,
-        ]
-    )
+    # compute_rolling_metrics() adds requests_rolling_mean,
+    # errors_rolling_mean, and latency_rolling_mean — see utils_system.py
+    # for exactly how each rolling-mean expression is built.
+    df_with_rolling: pl.DataFrame = compute_rolling_metrics(df, WINDOW_SIZE)
 
     LOG.info("Computed rolling mean signals")
 
     # ----------------------------------------------------
-    # STEP 4: SAVE RESULTS AS AN ARTIFACT
+    # STEP 3: SAVE RESULTS AS AN ARTIFACT
     # ----------------------------------------------------
     df_with_rolling.write_csv(OUTPUT_FILE)
     LOG.info(f"Wrote rolling monitoring file: {OUTPUT_FILE}")

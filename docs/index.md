@@ -1,21 +1,92 @@
-# 🏠 Continuous Intelligence Project Documentation
+# Rolling Monitoring of System Metrics
 
-> Use this hosted documentation site to tell your
-> data story. Include a narrative telling your
-> results, observations, and interpretations.
-> Display visuals as needed for a compelling story.
+Continuous Intelligence | Project 04 | Example Report
 
-## Professional Workflow
+## Overview
 
-See [**Workflow B: Apply Example Project**](https://denisecase.github.io/pro-analytics-02/workflow-b-apply-example-project/)
-to get a project like this running on your machine.
+This project investigates how rolling statistics
+can reveal patterns in system behavior over time.
 
-## Professional Projects
+Individual measurements may fluctuate.
+Rolling analysis provides a way to examine
+recent behavior while reducing short-term variation.
 
-- We code like the pros to help us **focus on the analytics**.
-- Most files in this repository will never be touched.
-- If curious about a file, check out the
-  [Professional Python Project Explainer](https://denisecase.github.io/professional-python-project-explainer/).
+## Data
+
+The example dataset contains 15 time-ordered observations
+collected at five-minute intervals.
+
+Each observation includes:
+
+- Timestamp.
+- Number of requests.
+- Number of errors.
+- Total latency in milliseconds.
+
+[View Example Dataset](https://github.com/denisecase/cintel-04-rolling-monitoring/blob/main/data/system_metrics_timeseries_case.csv)
+
+## Methods
+
+The pipeline sorts observations by timestamp
+and computes rolling averages using a window
+of three observations.
+
+Rolling averages are calculated for:
+
+- Requests.
+- Errors.
+- Total latency.
+
+Each completed window summarizes the current
+observation and the two preceding observations.
+
+The first two rows have no rolling average
+because the full window is not yet available.
+
+## Results
+
+The rolling metrics show several changes in activity.
+
+| Time  | Rolling Requests | Rolling Errors |
+| ----- | ---------------: | -------------: |
+| 08:10 |           135.00 |           3.00 |
+| 08:25 |           171.67 |           6.00 |
+| 08:50 |           145.00 |           2.33 |
+| 09:10 |           198.33 |           7.67 |
+
+[View Rolling Monitoring Results](https://github.com/denisecase/cintel-04-rolling-monitoring/blob/main/artifacts/rolling_metrics_case.csv)
+
+## Interpretation
+
+The rolling averages reveal periods of increasing
+activity, declining activity, and renewed growth.
+
+Toward the end of the observation period,
+request counts and error counts both increase.
+
+This suggests that growing workload may coincide
+with additional errors, although the data
+does not establish a causal relationship.
+
+## Limitations
+
+Rolling averages smooth short-term variation,
+but may delay detection of sudden changes.
+
+The example uses a fixed three-observation window.
+Different window sizes may reveal different patterns.
+
+The pipeline does not yet classify anomalies
+or issue monitoring alerts.
+
+## Conclusion
+
+Rolling monitoring adds a temporal perspective
+to system analysis.
+
+It provides a foundation for identifying developing
+patterns and determining when further investigation
+may be useful.
 
 ## Documentation Index
 
@@ -25,22 +96,15 @@ to get a project like this running on your machine.
 - [**API**](api.md)
 - [**Reactive App**](./app/index.html)
 
-## How To Set Up This Project Documentation
+## Project Links
 
-Go to your GitHub repository / (More) / Settings / Pages /
-Build and deployment Source = GitHub Actions.
+- [GitHub Repository](https://github.com/denisecase/cintel-04-rolling-monitoring)
+- [Example Pipeline](https://github.com/denisecase/cintel-04-rolling-monitoring/blob/main/src/cintel/rolling_monitor.py)
+- [Results and Artifacts](https://github.com/denisecase/cintel-04-rolling-monitoring/tree/main/artifacts)
 
-We have a helper at `.github/workflows/deploy-zensical.yml` that will
-automagically deploy these documents to a hosted
-project documentation web site.
+## Project Resources
 
-When viewing your GitHub repository **Code** tab,
-click the gear icon in the **About** section on the right
-to provide a short description, check the box to use your
-Pages documentation site, and configure some keywords.
-
-Professional communication is a valuable skill.
-
-## Additional Resources
-
+- [Project Instructions](project-instructions.md)
+- [Professional Python Guide](https://denisecase.github.io/pro-analytics-02/)
+- [Professional Python Project Explainer](https://pup-pack.github.io/professional-python-project-explainer/).
 - [Suggested Datasets](https://denisecase.github.io/pro-analytics-02/reference/datasets/cintel/)
