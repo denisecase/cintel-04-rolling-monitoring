@@ -120,8 +120,8 @@ def main() -> None:
     # N observations. The window "moves" forward one row at a time.
 
     # Example: if WINDOW_SIZE = 3
-    # row 1 → mean of rows [1]
-    # row 2 → mean of rows [1,2]
+    # row 1 → mean of rows [1] = null, incomplete
+    # row 2 → mean of rows [1,2] = null, incomplete
     # row 3 → mean of rows [1,2,3]
     # row 4 → mean of rows [2,3,4]
 
