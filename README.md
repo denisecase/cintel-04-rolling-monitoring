@@ -65,6 +65,15 @@ From a VS Code terminal in the project root:
 uv run python -m cintel.rolling_monitor
 ```
 
+## Run the Reactive App
+
+From a VS Code terminal in the project root
+(hit CTRL + c to quit):
+
+```shell
+uv run marimo run  src/cintel/app.py
+```
+
 ## Results
 
 The pipeline calculates rolling averages and writes
