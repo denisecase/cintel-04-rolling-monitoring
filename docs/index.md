@@ -23,7 +23,7 @@ Each observation includes:
 - Number of errors.
 - Total latency in milliseconds.
 
-[View Example Dataset](https://github.com/denisecase/cintel-04-rolling-monitoring/blob/main/data/system_metrics_timeseries_case.csv)
+[View Example Dataset](https://github.com/denisecase/cintel-04-rolling-monitoring/blob/main/data/system_metrics_timeseries.csv)
 
 ## Methods
 
@@ -54,7 +54,7 @@ The rolling metrics show several changes in activity.
 | 08:50 |           145.00 |           2.33 |
 | 09:10 |           198.33 |           7.67 |
 
-[View Rolling Monitoring Results](https://github.com/denisecase/cintel-04-rolling-monitoring/blob/main/artifacts/rolling_metrics_case.csv)
+[View Rolling Monitoring Results](https://github.com/denisecase/cintel-04-rolling-monitoring/blob/main/artifacts/rolling_metrics.csv)
 
 ## Interpretation
 

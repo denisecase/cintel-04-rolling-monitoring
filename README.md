@@ -68,7 +68,7 @@ uv run python -m cintel.rolling_monitor
 ## Results
 
 The pipeline calculates rolling averages and writes
-`artifacts/rolling_metrics_case.csv`.
+`artifacts/rolling_metrics.csv`.
 Review the rolling measurements to understand
 how smoothing can reveal trends and reduce short-term variation.
 
